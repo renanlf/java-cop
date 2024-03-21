@@ -31,7 +31,7 @@ public class DimacsCNFMatrixMapper implements MatrixMapper<Integer> {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             int numberLiterals;
-            int numerClauses;
+            int numberClauses;
             boolean readingClauses = false;
             Collection<Collection<Integer>> matrix = new ArrayList<>();
             while ((line = reader.readLine()) != null) {
@@ -39,7 +39,7 @@ public class DimacsCNFMatrixMapper implements MatrixMapper<Integer> {
                     Matcher matcher = pLinePattern.matcher(line);
                     if (matcher.matches()) {
                         numberLiterals = Integer.valueOf(matcher.group(1));
-                        numerClauses = Integer.valueOf(matcher.group(2));
+                        numberClauses = Integer.valueOf(matcher.group(2));
                         readingClauses = true;
                     }
                 } else {
@@ -61,7 +61,9 @@ public class DimacsCNFMatrixMapper implements MatrixMapper<Integer> {
                 }
             }
             return matrix;
-        }
+        } catch (Exception e) {
+            throw new FileParserException();
+        } 
     }
 
     @Override
