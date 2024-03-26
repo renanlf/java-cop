@@ -4,10 +4,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,22 +18,24 @@ import edu.br.ufpe.cin.sword.cm.mapper.listeners.MatrixListener;
 
 public class DimacsCNFMatrixMapper implements MatrixMapper<Integer> {
 
-    private List<ClauseListener<Integer>> clauseListeners;
+    private Set<ClauseListener<Integer>> clauseListeners;
+    private Set<MatrixListener<Integer>> matrixListeners;
 
     public DimacsCNFMatrixMapper() {
-        this.clauseListeners = new ArrayList<>();
+        this.clauseListeners = new HashSet<>();
+        this.matrixListeners = new HashSet<>();
     }
 
     @Override
     public Collection<Collection<Integer>> map(File file) throws IOException, FileParserException {
-        Pattern pLinePattern = Pattern.compile("p cnf (\\d+) (\\d+)");
-        
+        Pattern pLinePattern = Pattern.compile("p[\s\t\n]*cnf[\s\t\n]*(\\d+)[\s\t\n]*(\\d+)");
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             int numberLiterals;
             int numberClauses;
             boolean readingClauses = false;
-            Collection<Collection<Integer>> matrix = new ArrayList<>();
+            Collection<Collection<Integer>> matrix = new HashSet<>();
             while ((line = reader.readLine()) != null) {
                 if (!readingClauses) {
                     Matcher matcher = pLinePattern.matcher(line);
@@ -43,27 +45,28 @@ public class DimacsCNFMatrixMapper implements MatrixMapper<Integer> {
                         readingClauses = true;
                     }
                 } else {
-                    List<Integer> clause = new ArrayList<>();
+                    Set<Integer> clause = new HashSet<>();
                     try (Scanner scanner = new Scanner(line)) {
-                        while(scanner.hasNextInt()) {
+                        while (scanner.hasNextInt()) {
                             int number = scanner.nextInt();
 
-                            if(number == 0) {
+                            if (number == 0) {
                                 break;
                             }
 
                             clause.add(number);
                         }
-                    }   
+                    }
 
-                    clauseMapped(clause);
+                    notifyClauseListeners(clause);
                     matrix.add(clause);
                 }
             }
+            notifyMatrixListeners(matrix);
             return matrix;
         } catch (Exception e) {
             throw new FileParserException();
-        } 
+        }
     }
 
     @Override
@@ -72,11 +75,19 @@ public class DimacsCNFMatrixMapper implements MatrixMapper<Integer> {
     }
 
     @Override
-    public void addMatrixListener(MatrixListener<Integer> matrixListener) { }
+    public void addMatrixListener(MatrixListener<Integer> matrixListener) {
+        matrixListeners.add(matrixListener);
+    }
 
-    private void clauseMapped(List<Integer> clause) {
+    private void notifyClauseListeners(Set<Integer> clause) {
         clauseListeners.forEach(clauseListener -> {
             clauseListener.onClauseMap(clause);
+        });
+    }
+
+    private void notifyMatrixListeners(Collection<Collection<Integer>> matrix) {
+        matrixListeners.forEach(matrixListener -> {
+            matrixListener.onMatrixMap(matrix);
         });
     }
 

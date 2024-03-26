@@ -23,4 +23,12 @@ public class DimacsCNFMatrixMapperTest {
         assertEquals(List.of(1, -3), matrix.get(0));
         assertEquals(List.of(2, 3, -1), matrix.get(1));
     }
+
+    @Test
+    public void testMapDimacsCNFFileDubois20() throws IOException, FileParserException {
+        var mapper = new DimacsCNFMatrixMapper();
+        var matrix = mapper.map(new File("src/test/resources/sat/dubois20.cnf")).stream().collect(Collectors.toList());
+        assertNotNull(matrix);
+        assertEquals(160, matrix.size());
+    }
 }
